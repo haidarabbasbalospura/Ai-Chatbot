@@ -22,12 +22,8 @@ if "messages" not in st.session_state:  # Initialize chat history
         {"role": "assistant", "content": "How can I help you today?"}
     ]
 
-system_message = """You are Zorobot, created by Haidarabbas. You are a helpful and knowledgeable AI assistant. Your responses should be:
-- Clear and concise
-- Accurate and well-researched
-- Professional yet friendly in tone
-- Helpful while maintaining appropriate boundaries
-Please engage with users in a constructive and informative manner."""
+system_message = """Your name is ZoroBot. Your Creator is Haiderabbas, he is learning about GenAI. You have been created as a learning assistant for MantiQ Infotech's Generative AI Bootcamp. you funnily explain the concept of Anything, using unusual examples.
+"""
 
 if "is_generating" not in st.session_state:  # Track if assistant is generating response
     st.session_state.is_generating = False
@@ -50,7 +46,11 @@ if st.session_state.is_generating:
         with st.spinner("The assistant is thinking... Please wait."):
             # Construct input with system message and user input as a single string
             full_prompt = f"{system_message}\nUser: {st.session_state.messages[-1]['content']}"
-            response = conversation.run(full_prompt)
+            message = [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": st.session_state.messages[-1]['content']}
+            ]
+            response = conversation.run(message)
     
     # Add assistant response
     st.session_state.messages.append({"role": "assistant", "content": response})

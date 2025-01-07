@@ -4,3 +4,4 @@ langchain-google-genai
 streamlit
 streamlit-chat
 python-dotenv
+langchain-core
