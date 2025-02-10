@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .messages-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .messages-container::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 3px;
+        }
+
+        .message-bubble {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .typing-indicator {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-gray-900 to-gray-800 min-h-screen">
+    <div class="container mx-auto p-4 max-w-4xl h-screen flex flex-col">
+        <!-- Chat Container -->
+        <div class="bg-gray-800 rounded-xl shadow-2xl flex flex-col flex-grow overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gray-900 p-4 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-robot text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-white">AI Assistant</h1>
+                        <div class="flex items-center space-x-1">
+                            <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                            <span class="text-sm text-gray-400" id="current-model">Gemini Pro</span>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="toggleSettings()" class="p-2 hover:bg-gray-700 rounded-full transition-colors">
+                    <i class="fas fa-gear text-gray-400 hover:text-white"></i>
+                </button>
+            </div>
+
+            <!-- Messages Area -->
+            <div class="flex-grow overflow-y-auto p-4 space-y-4 messages-container" id="chat-messages">
+                <!-- Welcome Message -->
+                <div class="flex items-start space-x-2 message-bubble">
+                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-robot text-white text-sm"></i>
+                    </div>
+                    <div class="bg-gray-700 rounded-lg p-3 max-w-[80%]">
+                        <p class="text-white">Hello! How can I assist you today?</p>
+                        <p class="text-xs text-gray-400 mt-1"><%- new Date().toLocaleTimeString([], { hour: '2-digit' ,
+                                minute: '2-digit' }) %></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="p-4 bg-gray-900">
+                <form id="chat-form" class="flex space-x-2">
+                    <div class="flex-grow relative">
+                        <input type="text" id="user-input"
+                            class="w-full bg-gray-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                            placeholder="Type your message..." autocomplete="off">
+                        <div id="typing-indicator" class="hidden absolute right-3 top-1/2 transform -translate-y-1/2">
+                            <i class="fas fa-circle-notch fa-spin text-blue-500"></i>
+                        </div>
+                    </div>
+                    <button type="submit"
+                        class="bg-blue-500 hover:bg-blue-600 text-white rounded-xl px-6 py-3 transition-colors flex items-center space-x-2">
+                        <span>Send</span>
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <!-- <div id="settings-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-white">Model Settings</h2>
+                <button onclick="toggleSettings()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="settings-form" class="space-y-4">
+           
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Model</label>
+                    <select id="ai-model" class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="gemini-pro">Gemini Pro</option>
+                        <option value="mistralai/Mistral-7B-Instruct-v0.3">Mistral-7B-Instruct</option>
+                        <option value="meta-llama/Llama-3.3-70B-Instruct-Turbo">Llama-3.3-70B-Instruct</option>
+                        <option value="Qwen/Qwen2.5-Coder-32B-Instruct">Qwen2.5-Coder</option>
+                    </select>
+                </div>
+
+               
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">
+                        Temperature: <span id="temp-value">0.7</span>
+                    </label>
+                    <input 
+                        type="range" 
+                        id="temperature" 
+                        min="0" 
+                        max="1" 
+                        step="0.1" 
+                        value="0.7"
+                        class="w-full"
+                    >
+                </div>
+
+                <button 
+                    type="submit" 
+                    class="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-4 py-2 transition-colors"
+                >
+                    Save Settings
+                </button>
+            </form>
+        </div>
+    </div> -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-md">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-white">AI Model Settings</h2>
+            <button onclick="toggleSettings()" class="text-gray-400 hover:text-white">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <form id="settings-form" class="space-y-4">
+            <!-- Provider Selection -->
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">AI Provider</label>
+                <select id="ai-provider"
+                    class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="google">Google (Gemini)</option>
+                    <option value="together">Together AI</option>
+                </select>
+            </div>
+
+            <!-- Model Selection -->
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Model</label>
+                <select id="ai-model"
+                    class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <!-- Google Models -->
+                    <option value="gemini-pro" data-provider="google">Gemini Pro</option>
+
+                    <!-- Together AI Models -->
+                    <option value="mistralai/Mistral-7B-Instruct-v0.3" data-provider="together">Mistral-7B-Instruct
+                    </option>
+                    <option value="meta-llama/Llama-3.3-70B-Instruct-Turbo" data-provider="together">
+                        Llama-3.3-70B-Instruct</option>
+                    <option value="Qwen/Qwen2.5-Coder-32B-Instruct" data-provider="together">Qwen2.5-Coder</option>
+                </select>
+            </div>
+
+            <!-- Temperature Setting -->
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">
+                    Temperature: <span id="temp-value">0.7</span>
+                </label>
+                <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7" class="w-full">
+            </div>
+
+            <button type="submit"
+                class="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-4 py-2 transition-colors">
+                Save Settings
+            </button>
+        </form>
+    </div>
+    </div>
+    <script>
+        const chatForm = document.getElementById('chat-form');
+        const messagesContainer = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const currentModelDisplay = document.getElementById('current-model');
+
+        function toggleSettings() {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        function addMessage(content, isUser = false) {
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex items-start space-x-2 message-bubble ${isUser ? 'flex-row-reverse space-x-reverse' : ''}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = `w-8 h-8 ${isUser ? 'bg-green-500' : 'bg-blue-500'} rounded-full flex items-center justify-center`;
+            avatar.innerHTML = `<i class="fas fa-${isUser ? 'user' : 'robot'} text-white text-sm"></i>`;
+
+            const messageBubble = document.createElement('div');
+            messageBubble.className = `${isUser ? 'bg-blue-500' : 'bg-gray-700'} rounded-lg p-3 max-w-[80%]`;
+            messageBubble.innerHTML = `
+                <p class="text-white">${content}</p>
+                <p class="text-xs text-gray-400 mt-1">${time}</p>
+            `;
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(messageBubble);
+            messagesContainer.appendChild(messageDiv);
+
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Update temperature value display
+        document.getElementById('temperature').addEventListener('input', function (e) {
+            document.getElementById('temp-value').textContent = e.target.value;
+        });
+
+        // Handle settings form submission
+        // Update your existing JavaScript for the settings form
+        document.getElementById('settings-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const settings = {
+                provider: document.getElementById('ai-provider').value,
+                model: document.getElementById('ai-model').value,
+                temperature: document.getElementById('temperature').value
+            };
+
+            try {
+                const response = await fetch('/update-settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(settings)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    toggleSettings();
+                    addMessage('Settings updated successfully!', false);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                addMessage('Error updating settings: ' + error.message, false);
+            }
+        });
+        // document.getElementById('settings-form').addEventListener('submit', async function (e) {
+        //     e.preventDefault();
+
+        //     const settings = {
+        //         model: document.getElementById('ai-model').value,
+        //         temperature: document.getElementById('temperature').value
+        //     };
+
+        //     try {
+        //         const response = await fetch('/update-settings', {
+        //             method: 'POST',
+        //             headers: {
+        //                 'Content-Type': 'application/json',
+        //             },
+        //             body: JSON.stringify(settings)
+        //         });
+
+        //         const data = await response.json();
+        //         if (data.success) {
+        //             toggleSettings();
+        //             currentModelDisplay.textContent = document.getElementById('ai-model').options[
+        //                 document.getElementById('ai-model').selectedIndex
+        //             ].text;
+        //             addMessage('Settings updated successfully!', false);
+        //         } else {
+        //             throw new Error(data.error);
+        //         }
+        //     } catch (error) {
+        //         addMessage('Error updating settings: ' + error.message, false);
+        //     }
+        // });
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, true);
+            userInput.value = '';
+            userInput.disabled = true;
+            typingIndicator.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+                addMessage(data.response);
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('Sorry, something went wrong. Please try again.');
+            } finally {
+                userInput.disabled = false;
+                typingIndicator.classList.add('hidden');
+                userInput.focus();
+            }
+        });
+
+        // Focus input on page load
+        userInput.focus();
+
+        // Add Ctrl+Enter support
+        userInput.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                chatForm.dispatchEvent(new Event('submit'));
+            }
+        });
+    </script>
+</body>
+
+</html>
